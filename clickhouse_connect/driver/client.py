@@ -363,6 +363,28 @@ class Client(ABC):
         """
         return self._context_query(locals(), use_numpy=True, as_pandas=True).df_result
 
+    def query_df_raw(self,
+                     query: Optional[str] = None,
+                     parameters: Optional[Union[Sequence, Dict[str, Any]]] = None,
+                     settings: Optional[Dict[str, Any]] = None,
+                     query_formats: Optional[Dict[str, str]] = None,
+                     column_formats: Optional[Dict[str, str]] = None,
+                     encoding: Optional[str] = None,
+                     use_none: Optional[bool] = None,
+                     max_str_len: Optional[int] = None,
+                     use_na_values: Optional[bool] = None,
+                     query_tz: Optional[str] = None,
+                     column_tzs: Optional[Dict[str, Union[str, tzinfo]]] = None,
+                     context: QueryContext = None,
+                     external_data: Optional[ExternalData] = None,
+                     use_extended_dtypes: Optional[bool] = None):
+        """
+        Query method that returns the raw HTTP results from ClickHouse. This response is streamed.
+        For parameter values, see the create_query_context method
+        :return: HTTPResponse
+        """
+        return self._context_query(locals(), use_numpy=True, as_pandas=True, send_response=True)
+
     # pylint: disable=duplicate-code,too-many-arguments,unused-argument
     def query_df_stream(self,
                         query: Optional[str] = None,

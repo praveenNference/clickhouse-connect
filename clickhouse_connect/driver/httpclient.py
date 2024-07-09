@@ -185,7 +185,15 @@ class HttpClient(Client):
             return final_query + fmt.encode()
         return final_query + fmt
 
-    def _query_with_context(self, context: QueryContext) -> QueryResult:
+    def _prep_query_result(self, context: QueryContext, response: HTTPResponse) -> QueryResult:
+        byte_source = RespBuffCls(ResponseSource(response))  # pylint: disable=not-callable
+        context.set_response_tz(self._check_tz_change(response.headers.get('X-ClickHouse-Timezone')))
+        query_result = self._transform.parse_response(byte_source, context)
+        query_result.summary = self._summary(response)
+        return query_result
+
+    def _query_with_context(self, context: QueryContext, send_response: bool = None) \
+            -> Union[QueryResult, HTTPResponse]:
         headers = {}
         params = {}
         if self.database:
@@ -229,11 +237,9 @@ class HttpClient(Client):
                                      retries=self.query_retries,
                                      fields=fields,
                                      server_wait=not context.streaming)
-        byte_source = RespBuffCls(ResponseSource(response))  # pylint: disable=not-callable
-        context.set_response_tz(self._check_tz_change(response.headers.get('X-ClickHouse-Timezone')))
-        query_result = self._transform.parse_response(byte_source, context)
-        query_result.summary = self._summary(response)
-        return query_result
+        if send_response:
+            return response
+        return self._prep_query_result(context, response)
 
     def data_insert(self, context: InsertContext) -> QuerySummary:
         """
